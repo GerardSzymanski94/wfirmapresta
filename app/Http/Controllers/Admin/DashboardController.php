@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Log;
 use App\Models\WFirmaGood;
 use App\Repositories\PrestashopApiRepository;
 use App\Repositories\WfirmaApiRepository;
@@ -16,7 +17,24 @@ class DashboardController extends BaseController
         return view('admin.index');
     }
 
-    public function getWFirmaGoods()
+    public function logs()
+    {
+        $logs = Log::where('id', '>', 0)->orderByDesc('id')->paginate(50);
+        return view('admin.logs', compact('logs'));
+    }
+
+    public function log(Log $log)
+    {
+        return view('admin.log', compact('log'));
+    }
+
+
+    public function runUpdate()
+    {
+        $this->getWFirmaGoods();
+    }
+
+    public function getWFirmaGoods($log = null)
     {
         ini_set('max_execution_time', 36000);
         $repo = new WfirmaApiRepository("grazyna.chojnacka@belamesa.pl", 'Magazynowanie2014');
@@ -59,9 +77,8 @@ class DashboardController extends BaseController
                 return false;
             }
         }
-        echo "end";
-        dd();
-        // dd($repo->getGoods(1, 20));
+
+        return true;
     }
 
     public function getPrestaProducts()
@@ -70,4 +87,6 @@ class DashboardController extends BaseController
         $repo = new PrestashopApiRepository($presta);
         $repo->getProducts();
     }
+
+
 }
