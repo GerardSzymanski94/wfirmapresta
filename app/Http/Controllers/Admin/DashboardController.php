@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\WFirmaGood;
+use App\Repositories\PrestashopApiRepository;
 use App\Repositories\WfirmaApiRepository;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Protechstudio\PrestashopWebService\PrestashopWebService;
 
 class DashboardController extends BaseController
 {
@@ -60,5 +62,12 @@ class DashboardController extends BaseController
         echo "end";
         dd();
         // dd($repo->getGoods(1, 20));
+    }
+
+    public function getPrestaProducts()
+    {
+        $presta = new PrestashopWebService();
+        $repo = new PrestashopApiRepository($presta);
+        $repo->getProducts();
     }
 }

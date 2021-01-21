@@ -19,6 +19,7 @@ Route::namespace('Admin')->name('admin.')->prefix('administracja')->group(functi
 
     Route::get('/', 'DashboardController@index')->name('index');
     Route::get('/getgoods', 'DashboardController@getWFirmaGoods')->name('getgoods');
+    Route::get('/getproducts', 'PrestaController@getProducts')->name('getproducts');
     Route::prefix('dashboard')->name('dashboard.')->group(function () {
         Route::get('/', 'DashboardController@index')->name('index');
     });
