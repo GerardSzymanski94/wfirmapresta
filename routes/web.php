@@ -12,7 +12,7 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.index');
 });
 
 Route::namespace('Admin')->name('admin.')->prefix('administracja')->group(function () {
