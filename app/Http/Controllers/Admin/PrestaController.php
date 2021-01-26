@@ -23,7 +23,7 @@ class PrestaController extends Controller
     {
         $opt['resource'] = 'products';
         $opt['display'] = 'full';
-        $opt['limit'] = '5';
+       // $opt['limit'] = '7';
         $xml = $this->prestashop->get($opt);
 
         $json = json_encode($xml);
@@ -33,23 +33,36 @@ class PrestaController extends Controller
             if (is_array($product['reference']) || is_null($product['reference'])) {
                 continue;
             }
-            $prestaProduct = PrestaProduct::updateOrCreate([
-                'presta_id' => $product['id'],
-            ], [
-                'name' => $product['name']['language'],
-                //'count' => $product['quantity'],
-                'code' => $product['reference'],
-                'status' => 1,
-                'presta_config_id' => 1,
-            ]);
+           if (PrestaProduct::wherePrestaId($product['id'])->exists()) {
+                $prestaProduct = PrestaProduct::wherePrestaId($product['id'])->update([
+                    'name' => $product['name']['language'],
+                    //'count' => $product['quantity'],
+                    'code' => $product['reference'],
+                    'status' => 1,
+                    'presta_config_id' => 1,
+                ]);
+            } else {
+                $prestaProduct = PrestaProduct::create([
+                    'presta_id' => $product['id'],
+                    'name' => $product['name']['language'],
+                    'count' => 0,
+                    'code' => $product['reference'],
+                    'status' => 1,
+                    'presta_config_id' => 1,
+                ]);
+            }
 
+            $prestaProduct = PrestaProduct::wherePrestaId($product['id'])->first();
             $wfirma = WFirmaGood::whereCode($product['reference'])->first();
 
             if (isset($wfirma->id)) {
                 if (!is_null($wfirma->count)) {
                     $newCount = (int)$wfirma->count;
-                    if ($prestaProduct['count'] != $newCount) {
+                    if ($prestaProduct->count != $newCount) {
 
+ 			 if (!is_integer($prestaProduct->count)) {
+                            $prestaProduct->count = 0;
+                        }
 
                         $stokid = $product['associations']['stock_availables']['stock_available']['id'];
                         $attrid = $product['associations']['stock_availables']['stock_available']['id_product_attribute'];
@@ -59,7 +72,7 @@ class PrestaController extends Controller
                             'product_code' => $product['reference'],
                             'product_name' => $product['name']['language'],
                             'count_after' => $newCount,
-                            'count_before' => $prestaProduct['count'],
+                            'count_before' => $prestaProduct->count,
                             'product_id' => $product['id'],
                             'status' => 1,
                         ]);

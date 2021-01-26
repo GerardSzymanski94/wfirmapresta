@@ -42,6 +42,7 @@ class UpdateQuantityCommand extends Command
      */
     public function handle()
     {
+        exit;
         $log = Log::create([
             'status' => 1
         ]);
@@ -50,10 +51,11 @@ class UpdateQuantityCommand extends Command
         $presta = new PrestaController();
 
         $this->info('start');
-        //$wfirma->getWFirmaGoods($log);
+        $wfirma->getWFirmaGoods($log);
         $log->update([
             'status' => 2
         ]);
+        //exit();
         $this->info('WFirma Updated');
         $presta->getProducts($log);
         $log->update([

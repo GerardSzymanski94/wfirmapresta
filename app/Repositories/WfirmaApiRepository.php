@@ -91,12 +91,27 @@ class WfirmaApiRepository
         return $result;
     }
 
-    public function getGoods($page, $limit)
+    public function getGoods($page, $limit, $warehouse)
     {
-        $this->setPath('goods', 'find');
+        //magazyn główny  - 225479, Magazyn outlet - 393229
+        $this->setPath('goods', 'find', $warehouse);
         $this->setParameter('page', $page);
         $this->setParameter('limit', $limit);
+       // $this->setParameter('warehouse_id', $warehouse);
+
         $result = json_decode($this->getPost(), true);
+        //dd($result);
+        return $result;
+    }
+
+    public function getWarehouses()
+    {
+        $this->setPath('warehouses', 'find');
+        //$this->setParameter('page', $page);
+        //$this->setParameter('limit', $limit);
+        // $this->setParameter('warehouse_id', 2);
+        $result = json_decode($this->getPost(), true);
+        dd($result);
         return $result;
     }
 
@@ -192,9 +207,14 @@ class WfirmaApiRepository
         $this->request[$this->module]["parameters"][(string)$key] = $v;
     }
 
-    public function setPath($module, $call)
+    public function setPath($module, $call, $warehouse = null)
     {
         $this->path = $module . '/' . $call . '?inputFormat=json&outputFormat=json';
+
+        if (!is_null($warehouse)) {
+            $this->path = $this->path . '&warehouse_id=' . $warehouse;
+        }
+        //dd($this->path);
         $this->module = $module;
         $this->request[$module]["parameters"] = [];
     }

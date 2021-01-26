@@ -41,19 +41,19 @@ class DashboardController extends BaseController
 
         $true = true;
         $page = 1;
-        $limit = 20;
+        $limit = 1000;
         while ($true) {
-            $goods = $repo->getGoods($page, $limit);
+            $goods = $repo->getGoods($page, $limit, 225479);
             if ($goods['status']['code'] == "OK") {
 
                 foreach ($goods['goods'] as $key => $good) {
                     if ($key != 'parameters') {
                         WFirmaGood::updateOrCreate([
-                            'good_id' => $good['good']['id'],
+                            'code' => $good['good']['code'],
                             'w_firma_config_id' => 1,
                         ], [
                             'name' => $good['good']['name'],
-                            'code' => $good['good']['code'],
+                            'good_id' => $good['good']['id'],
                             'unit' => $good['good']['unit'],
                             'netto' => $good['good']['netto'],
                             'brutto' => $good['good']['brutto'],
@@ -64,12 +64,69 @@ class DashboardController extends BaseController
                             'notes' => $good['good']['notes'],
                             'documents' => $good['good']['documents'],
                             'tags' => $good['good']['tags'],
-                            'count' => $good['good']['count'],
+                            'count' => (int)$good['good']['count'],
                         ]);
                     }
                 }
                 if ($goods['goods']['parameters']['total'] > $page * $limit) {
                     $page++;
+                    //$true = false;
+                } else {
+                    $true = false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        $true = true;
+        $page = 1;
+        $limit = 1000;
+        while ($true) {
+            $goods = $repo->getGoods($page, $limit, '393229');
+            if ($goods['status']['code'] == "OK") {
+
+                foreach ($goods['goods'] as $key => $good) {
+                    if ($key != 'parameters') {
+
+                        if (WFirmaGood::whereCode($good['good']['code'])->where('w_firma_config_id', 1)->exists()) {
+                            $product = WFirmaGood::whereCode($good['good']['code'])->where('w_firma_config_id', 1)->first();
+                            if (!is_int($product->count)) {
+                                $product->count = (int)$product->count + (int)$good['good']['count'];
+                            } elseif (!is_int($good['good']['count'])) {
+                                dd($good);
+                            } else {
+                                $product->count = (int)$product->count + (int)$good['good']['count'];
+
+
+                            }
+                            //dd($product);
+                            $product->save();
+                        } else {
+                            WFirmaGood::updateOrCreate([
+                                'code' => $good['good']['code'],
+                                'w_firma_config_id' => 1,
+                            ], [
+                                'name' => $good['good']['name'],
+                                'good_id' => $good['good']['id'],
+                                'unit' => $good['good']['unit'],
+                                'netto' => $good['good']['netto'],
+                                'brutto' => $good['good']['brutto'],
+                                'lumpcode' => $good['good']['lumpcode'],
+                                'classification' => $good['good']['classification'],
+                                'discount' => $good['good']['discount'],
+                                'description' => $good['good']['description'],
+                                'notes' => $good['good']['notes'],
+                                'documents' => $good['good']['documents'],
+                                'tags' => $good['good']['tags'],
+                                'count' => (int)$good['good']['count'],
+                            ]);
+                        }
+                    }
+                }
+                if ($goods['goods']['parameters']['total'] > $page * $limit) {
+                    $page++;
+                  //  $true = false;
                 } else {
                     $true = false;
                 }
