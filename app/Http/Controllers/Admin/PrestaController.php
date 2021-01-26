@@ -23,7 +23,7 @@ class PrestaController extends Controller
     {
         $opt['resource'] = 'products';
         $opt['display'] = 'full';
-       // $opt['limit'] = '7';
+        // $opt['limit'] = '7';
         $xml = $this->prestashop->get($opt);
 
         $json = json_encode($xml);
@@ -33,55 +33,82 @@ class PrestaController extends Controller
             if (is_array($product['reference']) || is_null($product['reference'])) {
                 continue;
             }
-           if (PrestaProduct::wherePrestaId($product['id'])->exists()) {
+            $status = 1;
+            if (strpos($product['reference'], '_') !== false) {
+                $pack = explode('_', $product['reference']);
+                if (count($pack) == 2) {
+                    $number = str_replace('x', '', $pack[0]);
+                    if (is_numeric($number) && (int)$number < 10) {
+                        if (WFirmaGood::whereCode($pack[1])->exists()) {
+                            $element = WFirmaGood::whereCode($pack[1])->first();
+                            //dd($element);
+                            $elementCount = floor((int)$element->count / (int)$number);
+
+                        }
+                    }
+                }
+                //dd($pack);
+                $status = 2;
+            }
+            if (PrestaProduct::wherePrestaId($product['id'])->exists()) {
                 $prestaProduct = PrestaProduct::wherePrestaId($product['id'])->update([
                     'name' => $product['name']['language'],
                     //'count' => $product['quantity'],
                     'code' => $product['reference'],
-                    'status' => 1,
+                    'status' => $status,
                     'presta_config_id' => 1,
                 ]);
             } else {
+
                 $prestaProduct = PrestaProduct::create([
                     'presta_id' => $product['id'],
                     'name' => $product['name']['language'],
                     'count' => 0,
                     'code' => $product['reference'],
-                    'status' => 1,
+                    'status' => $status,
                     'presta_config_id' => 1,
                 ]);
             }
 
             $prestaProduct = PrestaProduct::wherePrestaId($product['id'])->first();
-            $wfirma = WFirmaGood::whereCode($product['reference'])->first();
+            if ($status == 2) {
+                $wfirma = $element;
+            } else {
+                $wfirma = WFirmaGood::whereCode($product['reference'])->first();
+            }
 
             if (isset($wfirma->id)) {
                 if (!is_null($wfirma->count)) {
-                    $newCount = (int)$wfirma->count;
+                    if ($status == 2) {
+                        $newCount = (int)$elementCount;
+                    } else {
+                        $newCount = (int)$wfirma->count;
+                    }
                     if ($prestaProduct->count != $newCount) {
 
- 			 if (!is_integer($prestaProduct->count)) {
+                        if (!is_integer($prestaProduct->count)) {
                             $prestaProduct->count = 0;
                         }
 
                         $stokid = $product['associations']['stock_availables']['stock_available']['id'];
                         $attrid = $product['associations']['stock_availables']['stock_available']['id_product_attribute'];
-                        $this->set_product_quantity($product['id'], $stokid, $attrid, $newCount);
-                        LogDetail::create([
-                            'log_id' => $log->id,
-                            'product_code' => $product['reference'],
-                            'product_name' => $product['name']['language'],
-                            'count_after' => $newCount,
-                            'count_before' => $prestaProduct->count,
-                            'product_id' => $product['id'],
-                            'status' => 1,
-                        ]);
+                          $this->set_product_quantity($product['id'], $stokid, $attrid, $newCount);
+                          LogDetail::create([
+                              'log_id' => $log->id,
+                              'product_code' => $product['reference'],
+                              'product_name' => $product['name']['language'],
+                              'count_after' => $newCount,
+                              'count_before' => $prestaProduct->count,
+                              'product_id' => $product['id'],
+                              'status' => 1,
+                          ]);
                         $prestaProduct->update(['count' => $newCount]);
                     }
                 }
             }
 
         }
+       // dd();
         return true;
     }
 
